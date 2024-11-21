@@ -23,6 +23,8 @@ public class TopicManagerImpl implements TopicManager {
   @Override
   public Publisher addPublisherToTopic(Topic topic) {
       if (topicMap.containsKey(topic)) {
+        Publisher act_publisher = topicMap.get(topic);
+        act_publisher.incPublishers();
         return topicMap.get(topic); // Return the existing publisher
     }
     
