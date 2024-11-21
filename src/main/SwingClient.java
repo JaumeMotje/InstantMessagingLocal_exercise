@@ -6,12 +6,15 @@ import util.Topic;
 import subscriber.SubscriberImpl;
 import java.awt.*;
 import java.awt.event.*;
+import java.util.ArrayList;
 import javax.swing.*;
 import java.util.HashMap;
 import java.util.Map;
 import publisher.Publisher;
+import publisher.PublisherImpl;
 import subscriber.Subscriber;
 import topicmanager.TopicManager;
+import util.Topic_check;
 
 public class SwingClient {
 
@@ -104,17 +107,25 @@ public class SwingClient {
 
     public void actionPerformed(ActionEvent e) {
       
-      //...
-      
+        ArrayList<Topic> topicsList = (ArrayList) topicManager.topics();
+        topic_list_TextArea.setText("");
+        for(Topic topic : topicsList){
+            topic_list_TextArea.append(topic.name + "\n");
+        }
     }
   }
 
   class newPublisherHandler implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
-      
-      //...
-      
+        
+        Topic act_topic = new Topic(argument_TextField.getText());
+        
+        publisher = topicManager.addPublisherToTopic(act_topic);
+        publisherTopic = act_topic;
+        
+        publisher_TextArea.setText(act_topic.name);
+        messages_TextArea.append("New publisher discussing about " + act_topic.name);
     }
   }
 
@@ -122,7 +133,6 @@ public class SwingClient {
 
     public void actionPerformed(ActionEvent e) {
       
-      //...
       
     }
   }
