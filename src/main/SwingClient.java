@@ -132,7 +132,20 @@ public class SwingClient {
   class newSubscriberHandler implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
-      
+        String topicName = argument_TextField.getText().trim();
+        Topic topic = new Topic(topicName);
+        Subscriber subscriber = new SubscriberImpl(SwingClient.this);
+        Subscription_check result = topicManager.subscribe(topic, subscriber);
+        if (result.result == Subscription_check.Result.OKAY) {
+            my_subscriptions.put(topic, subscriber); 
+            my_subscriptions_TextArea.setText("");
+            for (Topic t : my_subscriptions.keySet()) {
+                my_subscriptions_TextArea.append(t.name + "\n");
+            }
+            messages_TextArea.append("Successfully subscribed to topic: " + topicName + "\n");
+        } else if (result.result == Subscription_check.Result.NO_TOPIC) {
+            messages_TextArea.append("Error: Topic '" + topicName + "' does not exist.\n");
+        }
       
     }
   }
@@ -141,7 +154,28 @@ public class SwingClient {
 
     public void actionPerformed(ActionEvent e) {
       
-      //...
+      String topicName = argument_TextField.getText().trim();
+      Topic topic = new Topic(topicName);
+       Subscriber subscriber = my_subscriptions.get(topic);
+       if (subscriber == null) {
+            messages_TextArea.append("Error: You are not subscribed to topic '" + topicName + "'.\n");
+            return;
+       }
+
+        Subscription_check result = topicManager.unsubscribe(topic, subscriber);
+
+        if (result.result == Subscription_check.Result.OKAY) {
+            my_subscriptions.remove(topic); 
+            
+            my_subscriptions_TextArea.setText("");
+            for (Topic t : my_subscriptions.keySet()) {
+                my_subscriptions_TextArea.append(t.name + "\n");
+            }
+
+            messages_TextArea.append("Successfully unsubscribed from topic: " + topicName + "\n");
+        } else if (result.result == Subscription_check.Result.NO_TOPIC) {
+            messages_TextArea.append("Error: Topic '" + topicName + "' does not exist.\n");
+        }
       
     }
   }
@@ -149,8 +183,12 @@ public class SwingClient {
   class postEventHandler implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
-      
-      //...
+        String content = argument_TextField.getText();
+        
+        Message message = new Message(publisherTopic, content);
+        publisher.publish(message);
+
+        messages_TextArea.append("Message posted to topic '" + publisherTopic.name + "': " + content + "\n");
       
     }
   }
