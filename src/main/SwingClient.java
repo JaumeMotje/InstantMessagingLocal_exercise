@@ -125,7 +125,7 @@ public class SwingClient {
         publisherTopic = act_topic;
         
         publisher_TextArea.setText(act_topic.name);
-        messages_TextArea.append("New publisher discussing about " + act_topic.name);
+        messages_TextArea.append("New publisher discussing about " + act_topic.name + "\n");
     }
   }
 
