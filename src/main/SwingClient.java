@@ -20,22 +20,23 @@ public class SwingClient {
 
   TopicManager topicManager;
   public Map<Topic, Subscriber> my_subscriptions;
-  Publisher publisher;
-  Topic publisherTopic;
+  public Map<Topic, Publisher> my_publishers; // Store publishers for multiple topics
+  Topic activePublisherTopic;                // Currently selected topic for publishing
 
   JFrame frame;
   JTextArea topic_list_TextArea;
   public JTextArea messages_TextArea;
   public JTextArea my_subscriptions_TextArea;
-  JTextArea publisher_TextArea;
+  JComboBox<Topic> publisherComboBox;        // Dropdown to select active topic
   JTextField argument_TextField;
 
   public SwingClient(TopicManager topicManager) {
     this.topicManager = topicManager;
     my_subscriptions = new HashMap<Topic, Subscriber>();
-    publisher = null;
-    publisherTopic = null;
+    my_publishers = new HashMap<Topic, Publisher>();
+    activePublisherTopic = null;
   }
+
 
   public void createAndShowGUI() {
 
@@ -46,7 +47,7 @@ public class SwingClient {
     topic_list_TextArea = new JTextArea(5, 10);
     messages_TextArea = new JTextArea(10, 20);
     my_subscriptions_TextArea = new JTextArea(5, 10);
-    publisher_TextArea = new JTextArea(1, 10);
+    publisherComboBox = new JComboBox<Topic>();
     argument_TextField = new JTextField(20);
 
     JButton show_topics_button = new JButton("show Topics");
@@ -75,6 +76,17 @@ public class SwingClient {
     argumentP.add(new JLabel("Write content to set a new_publisher / new_subscriber / unsubscribe / post_event:"));
     argumentP.add(argument_TextField);
 
+    publisherComboBox = new JComboBox<Topic>();
+    publisherComboBox.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            activePublisherTopic = (Topic) publisherComboBox.getSelectedItem();
+            if (activePublisherTopic != null) {
+                messages_TextArea.append("Switched to publishing on topic: " + activePublisherTopic.name + "\n");
+            }
+        }
+    });
+    
     JPanel topicsP = new JPanel();
     topicsP.setLayout(new BoxLayout(topicsP, BoxLayout.PAGE_AXIS));
     topicsP.add(new JLabel("Topics:"));
@@ -83,9 +95,8 @@ public class SwingClient {
     topicsP.add(new JLabel("My Subscriptions:"));
     topicsP.add(my_subscriptions_TextArea);
     topicsP.add(new JScrollPane(my_subscriptions_TextArea));
-    topicsP.add(new JLabel("I'm Publisher of topic:"));
-    topicsP.add(publisher_TextArea);
-    topicsP.add(new JScrollPane(publisher_TextArea));
+    topicsP.add(new JLabel("I'm Publisher of topics:"));
+    topicsP.add(publisherComboBox); // Use ComboBox to switch topics
 
     JPanel messagesPanel = new JPanel();
     messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.PAGE_AXIS));
@@ -118,16 +129,39 @@ public class SwingClient {
   class newPublisherHandler implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
-        
-        Topic act_topic = new Topic(argument_TextField.getText());
-        
-        publisher = topicManager.addPublisherToTopic(act_topic);
-        publisherTopic = act_topic;
-        
-        publisher_TextArea.setText(act_topic.name);
-        messages_TextArea.append("New publisher discussing about " + act_topic.name);
+        String topicName = argument_TextField.getText().trim();
+
+        if (topicName.isEmpty()) {
+            messages_TextArea.append("Error: Topic name cannot be empty.\n");
+            return;
+        }
+
+        Topic newTopic = new Topic(topicName);
+
+        // Check if the topic already exists
+        if (topicManager.topics().contains(newTopic)) {
+            messages_TextArea.append("Error: Topic '" + topicName + "' already exists. You can switch to it using the dropdown menu.\n");
+            return;
+        }
+
+        // If the topic doesn't exist, create a new publisher
+        Publisher newPublisher = topicManager.addPublisherToTopic(newTopic);
+        if (newPublisher != null) {
+            my_publishers.put(newTopic, newPublisher);
+            publisherComboBox.addItem(newTopic); // Update the dropdown with the new topic
+            activePublisherTopic = newTopic;
+
+            // TODO Treat publisher as a subscriber to the topic
+            // topicManager.subscribe(newTopic, (Subscriber) newPublisher);
+
+            messages_TextArea.append("New publisher created for topic: " + topicName + "\n");
+        } else {
+            messages_TextArea.append("Error: Failed to create publisher for topic: " + topicName + "\n");
+        }
     }
   }
+
+
 
   class newSubscriberHandler implements ActionListener {
 
@@ -183,15 +217,25 @@ public class SwingClient {
   class postEventHandler implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
+        if (activePublisherTopic == null) {
+            messages_TextArea.append("Error: No topic selected for publishing.\n");
+            return;
+        }
+
+        Publisher publisher = my_publishers.get(activePublisherTopic);
+        if (publisher == null) {
+            messages_TextArea.append("Error: No publisher found for the selected topic.\n");
+            return;
+        }
+
         String content = argument_TextField.getText();
-        
-        Message message = new Message(publisherTopic, content);
+        Message message = new Message(activePublisherTopic, content);
         publisher.publish(message);
 
-        messages_TextArea.append("Message posted to topic '" + publisherTopic.name + "': " + content + "\n");
-      
+        messages_TextArea.append("Message posted to topic '" + activePublisherTopic.name + "': " + content + "\n");
     }
   }
+
 
   class CloseAppHandler implements ActionListener {
 

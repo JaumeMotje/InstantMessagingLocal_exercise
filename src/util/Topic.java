@@ -33,4 +33,8 @@ public class Topic {
     return true;
   }
   
+  @Override
+  public String toString() {
+    return name;  // Return the topic name for display
+  }
 }
