@@ -46,6 +46,9 @@ public class SwingClient {
 
     topic_list_TextArea = new JTextArea(5, 10);
     messages_TextArea = new JTextArea(10, 20);
+    messages_TextArea.setEditable(false);
+    messages_TextArea.setLineWrap(true);
+    messages_TextArea.setWrapStyleWord(true);
     my_subscriptions_TextArea = new JTextArea(5, 10);
     publisherComboBox = new JComboBox<Topic>();
     argument_TextField = new JTextField(20);
@@ -55,6 +58,7 @@ public class SwingClient {
     JButton new_subscriber_button = new JButton("new Subscriber");
     JButton to_unsubscribe_button = new JButton("to unsubscribe");
     JButton to_post_an_event_button = new JButton("post an event");
+    JButton forward_message_button = new JButton("forward Message");
     JButton to_close_the_app = new JButton("close app.");
 
     show_topics_button.addActionListener(new showTopicsHandler());
@@ -62,6 +66,7 @@ public class SwingClient {
     new_subscriber_button.addActionListener(new newSubscriberHandler());
     to_unsubscribe_button.addActionListener(new UnsubscribeHandler());
     to_post_an_event_button.addActionListener(new postEventHandler());
+    forward_message_button.addActionListener(new ForwardMessageHandler());
     to_close_the_app.addActionListener(new CloseAppHandler());
 
     JPanel buttonsPannel = new JPanel(new FlowLayout());
@@ -70,6 +75,7 @@ public class SwingClient {
     buttonsPannel.add(new_subscriber_button);
     buttonsPannel.add(to_unsubscribe_button);
     buttonsPannel.add(to_post_an_event_button);
+    buttonsPannel.add(forward_message_button);
     buttonsPannel.add(to_close_the_app);
 
     JPanel argumentP = new JPanel(new FlowLayout());
@@ -235,6 +241,34 @@ public class SwingClient {
         messages_TextArea.append("Message posted to topic '" + activePublisherTopic.name + "': " + content + "\n");
     }
   }
+  
+  class ForwardMessageHandler implements ActionListener {
+    public void actionPerformed(ActionEvent e) {
+        if (activePublisherTopic == null) {
+            messages_TextArea.append("Error: No topic selected for publishing.\n");
+            return;
+        }
+
+        // Verify that there is a message selected
+        String selectedMessage = messages_TextArea.getSelectedText();
+        if (selectedMessage == null || selectedMessage.trim().isEmpty()) {
+            messages_TextArea.append("Error: No message selected for forwarding.\n");
+            return;
+        }
+
+        Publisher publisher = my_publishers.get(activePublisherTopic);
+        if (publisher == null) {
+            messages_TextArea.append("Error: No publisher found for the selected topic.\n");
+            return;
+        }
+
+        // Create a message and publish it
+        Message message = new Message(activePublisherTopic, selectedMessage);
+        publisher.publish(message);
+
+        messages_TextArea.append("Message forwarded to topic '" + activePublisherTopic.name + "': " + selectedMessage + "\n");
+    }
+}
 
 
   class CloseAppHandler implements ActionListener {
