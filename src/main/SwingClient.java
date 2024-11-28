@@ -142,32 +142,48 @@ public class SwingClient {
             return;
         }
 
-        Topic newTopic = new Topic(topicName);
+        Topic selectedTopic = new Topic(topicName);
 
         // Check if the topic already exists
-        if (topicManager.topics().contains(newTopic)) {
-            messages_TextArea.append("Error: Topic '" + topicName + "' already exists. You can switch to it using the dropdown menu.\n");
-            return;
+        if (!topicManager.topics().contains(selectedTopic)) {
+            messages_TextArea.append("Topic '" + topicName + "' does not exist. Creating a new topic.\n");
+            topicManager.topics().add(selectedTopic); // Add the topic to the manager
+        } else {
+            messages_TextArea.append("Topic '" + topicName + "' already exists. Assigning you as a publisher.\n");
         }
 
-        // If the topic doesn't exist, create a new publisher
-        Publisher newPublisher = topicManager.addPublisherToTopic(newTopic);
+        // Create a publisher for the topic
+        Publisher newPublisher = topicManager.addPublisherToTopic(selectedTopic);
         if (newPublisher != null) {
-            my_publishers.put(newTopic, newPublisher);
-            publisherComboBox.addItem(newTopic); // Update the dropdown with the new topic
-            activePublisherTopic = newTopic;
+            my_publishers.put(selectedTopic, newPublisher);         
+            
+            DefaultComboBoxModel<Topic> model = (DefaultComboBoxModel<Topic>) publisherComboBox.getModel();
+            boolean topicExists = false;
 
-            // TODO Treat publisher as a subscriber to the topic
-            // topicManager.subscribe(newTopic, (Subscriber) newPublisher);
+            // Iterate through the ComboBox items to check if the topic is already there
+            for (int i = 0; i < model.getSize(); i++) {
+                if (model.getElementAt(i).equals(selectedTopic)) {
+                    topicExists = true;
+                    break;
+                }
+            }
 
-            messages_TextArea.append("New publisher created for topic: " + topicName + "\n");
+            // Add the topic only if it doesn't already exist
+            if (!topicExists) {
+                publisherComboBox.addItem(selectedTopic);
+            }
+            
+            activePublisherTopic = selectedTopic;
+
+            // Treat the publisher as a subscriber to receive messages
+            // topicManager.subscribe(selectedTopic, (Subscriber) newPublisher);
+
+            messages_TextArea.append("You are now a publisher for topic: " + topicName + "\n");
         } else {
-            messages_TextArea.append("Error: Failed to create publisher for topic: " + topicName + "\n");
+            messages_TextArea.append("Error: Failed to assign you as a publisher for topic: " + topicName + "\n");
         }
     }
-  }
-
-
+}
 
   class newSubscriberHandler implements ActionListener {
 
