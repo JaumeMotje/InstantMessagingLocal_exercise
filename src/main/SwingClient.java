@@ -26,6 +26,7 @@ public class SwingClient {
   JFrame frame;
   JTextArea topic_list_TextArea;
   public JTextArea messages_TextArea;
+  public JTextArea info_TextArea;
   public JTextArea my_subscriptions_TextArea;
   JComboBox<Topic> publisherComboBox;        // Dropdown to select active topic
   JTextField argument_TextField;
@@ -38,28 +39,37 @@ public class SwingClient {
   }
 
 
-  public void createAndShowGUI() {
+public void createAndShowGUI() {
 
-    frame = new JFrame("Publisher/Subscriber demo");
+    frame = new JFrame("Publisher/Subscriber Demo");
     frame.setSize(300, 300);
     frame.addWindowListener(new CloseWindowHandler());
 
     topic_list_TextArea = new JTextArea(5, 10);
-    messages_TextArea = new JTextArea(10, 20);
-    messages_TextArea.setEditable(false);
-    messages_TextArea.setLineWrap(true);
-    messages_TextArea.setWrapStyleWord(true);
     my_subscriptions_TextArea = new JTextArea(5, 10);
     publisherComboBox = new JComboBox<Topic>();
     argument_TextField = new JTextField(20);
 
-    JButton show_topics_button = new JButton("show Topics");
-    JButton new_publisher_button = new JButton("new Publisher");
-    JButton new_subscriber_button = new JButton("new Subscriber");
-    JButton to_unsubscribe_button = new JButton("to unsubscribe");
-    JButton to_post_an_event_button = new JButton("post an event");
-    JButton forward_message_button = new JButton("forward Message");
-    JButton to_close_the_app = new JButton("close app.");
+    // Separate TextAreas for Messages and Information
+    messages_TextArea = new JTextArea(10, 20);
+    messages_TextArea.setEditable(false);
+    messages_TextArea.setLineWrap(true);
+    messages_TextArea.setWrapStyleWord(true);
+
+    info_TextArea = new JTextArea(10, 20);
+    info_TextArea.setEditable(false);
+    info_TextArea.setLineWrap(true);
+    info_TextArea.setWrapStyleWord(true);
+
+    JButton show_topics_button = new JButton("Show Topics");
+    JButton new_publisher_button = new JButton("New Publisher");
+    JButton new_subscriber_button = new JButton("New Subscriber");
+    JButton to_unsubscribe_button = new JButton("Unsubscribe");
+    JButton to_post_an_event_button = new JButton("Post Event");
+    JButton forward_message_button = new JButton("Forward Message");
+    JButton to_close_the_app = new JButton("Close App");
+    JButton clear_info_button = new JButton("Clear Info"); // Clear Information
+    JButton clear_messages_button = new JButton("Clear Messages"); // Clear Messages
 
     show_topics_button.addActionListener(new showTopicsHandler());
     new_publisher_button.addActionListener(new newPublisherHandler());
@@ -68,6 +78,20 @@ public class SwingClient {
     to_post_an_event_button.addActionListener(new postEventHandler());
     forward_message_button.addActionListener(new ForwardMessageHandler());
     to_close_the_app.addActionListener(new CloseAppHandler());
+
+    clear_info_button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            info_TextArea.setText("");
+        }
+    });
+
+    clear_messages_button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            messages_TextArea.setText("");
+        }
+    });
 
     JPanel buttonsPannel = new JPanel(new FlowLayout());
     buttonsPannel.add(show_topics_button);
@@ -88,37 +112,48 @@ public class SwingClient {
         public void actionPerformed(ActionEvent e) {
             activePublisherTopic = (Topic) publisherComboBox.getSelectedItem();
             if (activePublisherTopic != null) {
-                messages_TextArea.append("Switched to publishing on topic: " + activePublisherTopic.name + "\n");
+                info_TextArea.append("Switched to publishing on topic: " + activePublisherTopic.name + "\n");
             }
         }
     });
-    
+
     JPanel topicsP = new JPanel();
     topicsP.setLayout(new BoxLayout(topicsP, BoxLayout.PAGE_AXIS));
     topicsP.add(new JLabel("Topics:"));
-    topicsP.add(topic_list_TextArea);
     topicsP.add(new JScrollPane(topic_list_TextArea));
     topicsP.add(new JLabel("My Subscriptions:"));
-    topicsP.add(my_subscriptions_TextArea);
     topicsP.add(new JScrollPane(my_subscriptions_TextArea));
     topicsP.add(new JLabel("I'm Publisher of topics:"));
-    topicsP.add(publisherComboBox); // Use ComboBox to switch topics
+    topicsP.add(publisherComboBox);
 
+    // Information Panel
+    JPanel infoPanel = new JPanel();
+    infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.PAGE_AXIS));
+    infoPanel.add(new JLabel("Information:"));
+    infoPanel.add(new JScrollPane(info_TextArea));
+    infoPanel.add(clear_info_button); // Add Clear Info Button
+
+    // Messages Panel
     JPanel messagesPanel = new JPanel();
     messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.PAGE_AXIS));
     messagesPanel.add(new JLabel("Messages:"));
-    messagesPanel.add(messages_TextArea);
     messagesPanel.add(new JScrollPane(messages_TextArea));
+    messagesPanel.add(clear_messages_button); // Add Clear Messages Button
+
+    // SplitPane for Columns
+    JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, infoPanel, messagesPanel);
+    splitPane.setDividerLocation(150); // Initial division point
+    splitPane.setResizeWeight(0.3); // Allocate 30% of space to the info panel
 
     Container mainPanel = frame.getContentPane();
     mainPanel.add(buttonsPannel, BorderLayout.PAGE_START);
-    mainPanel.add(messagesPanel, BorderLayout.CENTER);
+    mainPanel.add(splitPane, BorderLayout.CENTER); // Use SplitPane for the center
     mainPanel.add(argumentP, BorderLayout.PAGE_END);
     mainPanel.add(topicsP, BorderLayout.LINE_START);
 
     frame.pack();
     frame.setVisible(true);
-  }
+}
 
   class showTopicsHandler implements ActionListener {
 
@@ -138,36 +173,52 @@ public class SwingClient {
         String topicName = argument_TextField.getText().trim();
 
         if (topicName.isEmpty()) {
-            messages_TextArea.append("Error: Topic name cannot be empty.\n");
+            info_TextArea.append("Error: Topic name cannot be empty.\n");
             return;
         }
 
-        Topic newTopic = new Topic(topicName);
+        Topic selectedTopic = new Topic(topicName);
 
         // Check if the topic already exists
-        if (topicManager.topics().contains(newTopic)) {
-            messages_TextArea.append("Error: Topic '" + topicName + "' already exists. You can switch to it using the dropdown menu.\n");
-            return;
+        if (!topicManager.topics().contains(selectedTopic)) {
+            info_TextArea.append("Topic '" + topicName + "' does not exist. Creating a new topic.\n");
+            topicManager.topics().add(selectedTopic); // Add the topic to the manager
+        } else {
+            info_TextArea.append("Topic '" + topicName + "' already exists. Assigning you as a publisher.\n");
         }
 
-        // If the topic doesn't exist, create a new publisher
-        Publisher newPublisher = topicManager.addPublisherToTopic(newTopic);
+        // Create a publisher for the topic
+        Publisher newPublisher = topicManager.addPublisherToTopic(selectedTopic);
         if (newPublisher != null) {
-            my_publishers.put(newTopic, newPublisher);
-            publisherComboBox.addItem(newTopic); // Update the dropdown with the new topic
-            activePublisherTopic = newTopic;
+            my_publishers.put(selectedTopic, newPublisher);         
+            
+            DefaultComboBoxModel<Topic> model = (DefaultComboBoxModel<Topic>) publisherComboBox.getModel();
+            boolean topicExists = false;
 
-            // TODO Treat publisher as a subscriber to the topic
-            // topicManager.subscribe(newTopic, (Subscriber) newPublisher);
+            // Iterate through the ComboBox items to check if the topic is already there
+            for (int i = 0; i < model.getSize(); i++) {
+                if (model.getElementAt(i).equals(selectedTopic)) {
+                    topicExists = true;
+                    break;
+                }
+            }
 
-            messages_TextArea.append("New publisher created for topic: " + topicName + "\n");
+            // Add the topic only if it doesn't already exist
+            if (!topicExists) {
+                publisherComboBox.addItem(selectedTopic);
+            }
+            
+            activePublisherTopic = selectedTopic;
+
+            // Treat the publisher as a subscriber to receive messages
+            // topicManager.subscribe(selectedTopic, (Subscriber) newPublisher);
+
+            info_TextArea.append("You are now a publisher for topic: " + topicName + "\n");
         } else {
-            messages_TextArea.append("Error: Failed to create publisher for topic: " + topicName + "\n");
+            info_TextArea.append("Error: Failed to assign you as a publisher for topic: " + topicName + "\n");
         }
     }
-  }
-
-
+}
 
   class newSubscriberHandler implements ActionListener {
 
@@ -182,9 +233,9 @@ public class SwingClient {
             for (Topic t : my_subscriptions.keySet()) {
                 my_subscriptions_TextArea.append(t.name + "\n");
             }
-            messages_TextArea.append("Successfully subscribed to topic: " + topicName + "\n");
+            info_TextArea.append("Successfully subscribed to topic: " + topicName + "\n");
         } else if (result.result == Subscription_check.Result.NO_TOPIC) {
-            messages_TextArea.append("Error: Topic '" + topicName + "' does not exist.\n");
+            info_TextArea.append("Error: Topic '" + topicName + "' does not exist.\n");
         }
       
     }
@@ -198,7 +249,7 @@ public class SwingClient {
       Topic topic = new Topic(topicName);
        Subscriber subscriber = my_subscriptions.get(topic);
        if (subscriber == null) {
-            messages_TextArea.append("Error: You are not subscribed to topic '" + topicName + "'.\n");
+            info_TextArea.append("Error: You are not subscribed to topic '" + topicName + "'.\n");
             return;
        }
 
@@ -212,9 +263,9 @@ public class SwingClient {
                 my_subscriptions_TextArea.append(t.name + "\n");
             }
 
-            messages_TextArea.append("Successfully unsubscribed from topic: " + topicName + "\n");
+            info_TextArea.append("Successfully unsubscribed from topic: " + topicName + "\n");
         } else if (result.result == Subscription_check.Result.NO_TOPIC) {
-            messages_TextArea.append("Error: Topic '" + topicName + "' does not exist.\n");
+            info_TextArea.append("Error: Topic '" + topicName + "' does not exist.\n");
         }
       
     }
@@ -224,13 +275,13 @@ public class SwingClient {
 
     public void actionPerformed(ActionEvent e) {
         if (activePublisherTopic == null) {
-            messages_TextArea.append("Error: No topic selected for publishing.\n");
+            info_TextArea.append("Error: No topic selected for publishing.\n");
             return;
         }
 
         Publisher publisher = my_publishers.get(activePublisherTopic);
         if (publisher == null) {
-            messages_TextArea.append("Error: No publisher found for the selected topic.\n");
+            info_TextArea.append("Error: No publisher found for the selected topic.\n");
             return;
         }
 
@@ -245,20 +296,20 @@ public class SwingClient {
   class ForwardMessageHandler implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (activePublisherTopic == null) {
-            messages_TextArea.append("Error: No topic selected for publishing.\n");
+            info_TextArea.append("Error: No topic selected for publishing.\n");
             return;
         }
 
         // Verify that there is a message selected
         String selectedMessage = messages_TextArea.getSelectedText();
         if (selectedMessage == null || selectedMessage.trim().isEmpty()) {
-            messages_TextArea.append("Error: No message selected for forwarding.\n");
+            info_TextArea.append("Error: No message selected for forwarding.\n");
             return;
         }
 
         Publisher publisher = my_publishers.get(activePublisherTopic);
         if (publisher == null) {
-            messages_TextArea.append("Error: No publisher found for the selected topic.\n");
+            info_TextArea.append("Error: No publisher found for the selected topic.\n");
             return;
         }
 
