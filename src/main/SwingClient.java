@@ -68,6 +68,8 @@ public void createAndShowGUI() {
     JButton to_post_an_event_button = new JButton("Post Event");
     JButton forward_message_button = new JButton("Forward Message");
     JButton to_close_the_app = new JButton("Close App");
+    JButton clear_info_button = new JButton("Clear Info"); // Clear Information
+    JButton clear_messages_button = new JButton("Clear Messages"); // Clear Messages
 
     show_topics_button.addActionListener(new showTopicsHandler());
     new_publisher_button.addActionListener(new newPublisherHandler());
@@ -76,6 +78,20 @@ public void createAndShowGUI() {
     to_post_an_event_button.addActionListener(new postEventHandler());
     forward_message_button.addActionListener(new ForwardMessageHandler());
     to_close_the_app.addActionListener(new CloseAppHandler());
+
+    clear_info_button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            info_TextArea.setText("");
+        }
+    });
+
+    clear_messages_button.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            messages_TextArea.setText("");
+        }
+    });
 
     JPanel buttonsPannel = new JPanel(new FlowLayout());
     buttonsPannel.add(show_topics_button);
@@ -115,12 +131,14 @@ public void createAndShowGUI() {
     infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.PAGE_AXIS));
     infoPanel.add(new JLabel("Information:"));
     infoPanel.add(new JScrollPane(info_TextArea));
+    infoPanel.add(clear_info_button); // Add Clear Info Button
 
     // Messages Panel
     JPanel messagesPanel = new JPanel();
     messagesPanel.setLayout(new BoxLayout(messagesPanel, BoxLayout.PAGE_AXIS));
     messagesPanel.add(new JLabel("Messages:"));
     messagesPanel.add(new JScrollPane(messages_TextArea));
+    messagesPanel.add(clear_messages_button); // Add Clear Messages Button
 
     // SplitPane for Columns
     JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, infoPanel, messagesPanel);
